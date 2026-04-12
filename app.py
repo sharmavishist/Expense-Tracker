@@ -170,7 +170,7 @@ if st.session_state.page == "Dashboard":
         temp["month_sort"] = temp["date_calc"].dt.to_period("M")
         temp["Month"] = temp["date_calc"].dt.strftime("%b %y")
 
-        monthly_trend = temp.groupby(["month_sort", "Month"], as_index=False)["Amount"].sum()
+        monthly_trend = temp.groupby(["month_sort"], as_index=False)["Amount"].sum()
         monthly_trend = monthly_trend.sort_values("month_sort")
 
         st.plotly_chart(
