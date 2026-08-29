@@ -84,9 +84,12 @@ with tab2:
             }
         )
 
-        if st.button("Confirm & Insert All Records", type="primary"):
-            final_records = edited_df.to_dict(orient="records")
-            insert_expenses_batch(final_records)
-            st.success(f"All {len(final_records)} records inserted into Supabase!")
-            del st.session_state["staging_expenses"]
+        # In your Add Expense / Ingestion page:
+        if st.button("Confirm & Insert All Records"):
+            # Ensure all rows from the staged dataframe/editor are converted:
+            records_to_insert = staged_df.to_dict(orient="records")
+            
+            # Batch insert all records:
+            insert_expenses_batch(records_to_insert)
+            st.success(f"Successfully inserted {len(records_to_insert)} expenses!")
             st.rerun()
