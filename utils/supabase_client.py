@@ -7,6 +7,7 @@ def get_supabase_client() -> Client:
     key = st.secrets["SUPABASE_KEY"]
     return create_client(url, key)
 
+@st.cache_data(ttl=60)
 def fetch_all_expenses() -> list[dict]:
     supabase = get_supabase_client()
     response = supabase.table("expenses").select("*").order("date", desc=True).execute()
@@ -14,8 +15,14 @@ def fetch_all_expenses() -> list[dict]:
 
 def insert_expenses_batch(records: list[dict]):
     supabase = get_supabase_client()
-    return supabase.table("expenses").insert(records).execute()
+    res = supabase.table("expenses").insert(records).execute()
+    # Invalidate cache so Dashboard & Analytics fetch fresh rows immediately
+    fetch_all_expenses.clear()
+    return res
 
 def delete_expense_by_id(expense_id: int):
     supabase = get_supabase_client()
-    return supabase.table("expenses").delete().eq("id", expense_id).execute()
+    res = supabase.table("expenses").delete().eq("id", expense_id).execute()
+    # Invalidate cache on deletion
+    fetch_all_expenses.clear()
+    return res
