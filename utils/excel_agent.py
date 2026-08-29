@@ -8,7 +8,7 @@ import streamlit as st
 class ExpenseItem(BaseModel):
     date: str = Field(description="Transaction date strictly in YYYY-MM-DD format")
     category: Literal["Food", "Travel", "Bills", "Shopping", "Entertainment", "Health", "Other"] = Field(
-        description="Standardized category assigned based on the merchant, description, or notes"
+        description="Standardized category assigned based on merchant, item name, or description"
     )
     amount: float = Field(description="Positive numerical cost of the transaction")
     description: str = Field(description="Concise description or merchant name")
@@ -17,10 +17,16 @@ class ExtractedExpensePayload(BaseModel):
     transactions: List[ExpenseItem]
 
 def parse_spreadsheet_with_agent(df: pd.DataFrame) -> list[dict]:
-    # Initialize Groq client
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    # Clean and strip any accidental whitespace, quotes, or trailing newlines from secrets
+    raw_key = st.secrets.get("GROQ_API_KEY", "")
+    api_key = str(raw_key).strip().strip('"').strip("'")
+
+    if not api_key:
+        raise ValueError("GROQ_API_KEY is missing or empty in secrets.")
+
+    client = Groq(api_key=api_key)
     
-    # Take first 150 rows of user spreadsheet as CSV text
+    # Convert first 150 rows of user spreadsheet to CSV text
     csv_sample = df.head(150).to_csv(index=False)
 
     schema_json = json.dumps(ExtractedExpensePayload.model_json_schema(), indent=2)
@@ -29,12 +35,12 @@ def parse_spreadsheet_with_agent(df: pd.DataFrame) -> list[dict]:
 You are an expert financial ingestion AI.
 Analyze the raw tabular financial statement data provided by the user.
 
-Your tasks:
-1. Map raw columns corresponding to date, amount, description/merchant, and category.
-2. Convert all dates to standard 'YYYY-MM-DD' format.
+Tasks:
+1. Map raw columns corresponding to transaction date, amount/debit, description/merchant/notes, and category.
+2. Convert all dates strictly to standard 'YYYY-MM-DD' format.
 3. Ensure all amounts are positive float values.
 4. Categorize each item into exactly one of: ['Food', 'Travel', 'Bills', 'Shopping', 'Entertainment', 'Health', 'Other'].
-5. Standardize messy descriptions.
+5. Standardize messy descriptions and remove unnecessary prefixes.
 
 You MUST respond strictly with a valid JSON object matching this schema:
 {schema_json}
@@ -57,7 +63,7 @@ You MUST respond strictly with a valid JSON object matching this schema:
     
     # Handle response regardless of root wrapping key
     if isinstance(parsed, dict):
-        if "transactions" in parsed:
+        if "transactions" in parsed and isinstance(parsed["transactions"], list):
             return parsed["transactions"]
         for val in parsed.values():
             if isinstance(val, list):
