@@ -17,7 +17,7 @@ class ExtractedExpensePayload(BaseModel):
     transactions: List[ExpenseItem]
 
 def parse_spreadsheet_with_agent(df: pd.DataFrame) -> list[dict]:
-    # Clean and strip any accidental whitespace, quotes, or trailing newlines
+    # Clean and strip any accidental whitespace, quotes, or trailing newlines from secrets
     raw_key = st.secrets.get("GROQ_API_KEY", "")
     api_key = str(raw_key).strip().strip('"').strip("'")
 
@@ -48,41 +48,28 @@ You MUST respond strictly with a valid JSON object matching this schema:
 
     user_prompt = f"Raw Statement Data:\n{csv_sample}"
 
-    # Priority list of models to try in order
-    candidate_models = [
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
-        "openai/gpt-oss-20b",
-        "openai/gpt-oss-120b"
-    ]
+    # Use llama-3.1-8b-instant for fast, guaranteed tier availability
+    completion = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.1
+    )
 
-    last_error = None
-    for model_name in candidate_models:
-        try:
-            completion = client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.1
-            )
-            raw_response = completion.choices[0].message.content
-            parsed = json.loads(raw_response)
+    raw_response = completion.choices[0].message.content
+    parsed = json.loads(raw_response)
+    
+    # Handle response regardless of root wrapping key
+    if isinstance(parsed, dict):
+        if "transactions" in parsed and isinstance(parsed["transactions"], list):
+            return parsed["transactions"]
+        for val in parsed.values():
+            if isinstance(val, list):
+                return val
+    elif isinstance(parsed, list):
+        return parsed
 
-            if isinstance(parsed, dict):
-                if "transactions" in parsed and isinstance(parsed["transactions"], list):
-                    return parsed["transactions"]
-                for val in parsed.values():
-                    if isinstance(val, list):
-                        return val
-            elif isinstance(parsed, list):
-                return parsed
-
-            return []
-        except Exception as e:
-            last_error = e
-            continue
-
-    raise RuntimeError(f"All candidate models failed. Last error: {str(last_error)}")
+    return []
