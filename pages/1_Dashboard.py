@@ -39,8 +39,7 @@ else:
 
     # Select columns that exist in the dataframe
     cols_to_show = [c for c in ["id", "date", "category", "amount", "description"] if c in display_df.columns]
-    st.dataframe(
-        display_df[cols_to_show],
+    st.dataframe(display_df,
         use_container_width=True,
         hide_index=True
     )
