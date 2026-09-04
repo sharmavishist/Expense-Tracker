@@ -1,0 +1,53 @@
+name: Centralized Keep-Alive Runner
+
+on:
+  schedule:
+    # Runs every 3 days at 04:00 UTC (9:30 AM IST)
+    - cron: '0 4 */3 * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+jobs:
+  ping-all-services:
+    name: Ping Supabase & Streamlit Apps
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Supabase REST API (Expense DB)
+        env:
+          SUPABASE_URL: ${{ secrets.https://dxychuozluaxfmpehshj.supabase.com }}
+          : ${{ secrets. }}
+        run: |
+          echo "Checking Supabase database..."
+          if [ -z "$https://dxychuozluaxfmpehshj.supabase.com" ] || [ -z "$" ]; then
+            echo "::warning ::https://dxychuozluaxfmpehshj.supabase.com or  is missing."
+          else
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "apikey: $" \
+              -H "Authorization: Bearer $" \
+              "$https://dxychuozluaxfmpehshj.supabase.com/rest/v1/expenses?select=id&limit=1")
+            echo "Supabase Status: $STATUS"
+          fi
+
+      - name: Ping Expense Tracker App
+        env:
+          https://expense-tracker-byvishistsharma.streamlit.app/Add_Expense: ${{ secrets.https://expense-tracker-byvishistsharma.streamlit.app/Add_Expense }}
+        run: |
+          echo "Pinging Expense Tracker..."
+          if [ -n "$https://expense-tracker-byvishistsharma.streamlit.app/Add_Expense" ]; then
+            STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 30 "$https://expense-tracker-byvishistsharma.streamlit.app/Add_Expense")
+            echo "Expense App Status: $STATUS"
+          else
+            echo "https://expense-tracker-byvishistsharma.streamlit.app/Add_Expense secret is not set, skipping."
+          fi
+
+      - name: Ping Climate AI App
+        env:
+          https://climateaiapp-byvishistsharma.streamlit.app/: ${{ secrets.https://climateaiapp-byvishistsharma.streamlit.app/ }}
+        run: |
+          echo "Pinging Climate AI..."
+          if [ -n "$https://climateaiapp-byvishistsharma.streamlit.app/" ]; then
+            STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 30 "$https://climateaiapp-byvishistsharma.streamlit.app/")
+            echo "Climate AI Status: $STATUS"
+          else
+            echo "https://climateaiapp-byvishistsharma.streamlit.app/ secret is not set, skipping."
+          fi

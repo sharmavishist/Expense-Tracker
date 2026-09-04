@@ -14,12 +14,12 @@ st.set_page_config(page_title="Expense Tracker | FinSight AI", page_icon="💰",
 # SUPABASE & SECRETS CONFIG
 # -------------------------
 try:
-    SUPABASE_URL = st.secrets["SUPABASE_URL"]
-    SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+    SUPABASE_URL = st.secrets["https://dxychuozluaxfmpehshj.supabase.com"]
+    SUPABASE_KEY = st.secrets["sb_publishable_pw_nlDvKTDJHsJ6PxdKO3w_NAPXIEy8"]
 except KeyError:
     # Fallback to defaults if secrets.toml is missing
-    SUPABASE_URL = "https://dxychuozluaxfmpehshj.supabase.co"
-    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eWNodW96bHVheGZtcGVoc2hqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5NzU4NzEsImV4cCI6MjA5MTU1MTg3MX0.ZXgrwkHFL50ec4nDHfusMFgWBKYM4MsvX9Owc8wWeVU"
+    SUPABASE_URL = "https://dxychuozluaxfmpehshj.supabase.com"
+    SUPABASE_KEY = "sb_publishable_pw_nlDvKTDJHsJ6PxdKO3w_NAPXIEy8"
 
 @st.cache_resource
 def get_supabase_client() -> Client:
